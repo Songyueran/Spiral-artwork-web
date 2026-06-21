@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Geometry Archive</title>
+    <style>
+        :root {
+            --bg-canvas: #fafdfa;
+            --bg-ui: #f4f3ef; 
+            --text-dark: #2c2a29; 
+            --text-muted: #7c756e;
+            --accent-gold: #73b9b9; 
+            --border-line: #e3dec3;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Didot", "Georgia", serif; 
+            background: var(--bg-canvas); color: var(--text-dark); margin: 0; padding: 40px var(--bg-ui);
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box;
+        }
+
+        header { text-align: center; margin-bottom: 50px; max-width: 750px; border-bottom: 1px solid var(--border-line); padding-bottom: 25px; }
+        h1 { font-size: 32px; font-weight: 400; color: var(--text-dark); letter-spacing: 3px; margin: 0 0 12px 0; text-transform: uppercase; }
+        header p { font-family: -apple-system, sans-serif; font-size: 14px; color: var(--text-muted); margin: 0; line-height: 1.6; letter-spacing: 0.5px; }
+
+        .exhibition-deck { display: flex; gap: 50px; width: 100%; max-width: 1150px; align-items: flex-start; }
+
+        .easel-panel {
+            flex: 1.6; background: var(--bg-ui); border-radius: 4px; padding: 35px; 
+            display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border-line);
+        }
+        .canvas-frame { background: #ffffff; padding: 12px; border-radius: 2px; border: 1px solid var(--border-line); margin-bottom: 30px; box-shadow: 0 6px 20px rgba(0,0,0,0.03); }
+        
+        canvas#mainCanvas { background: #ffffff; display: block; width: 500px; height: 500px; }
+        
+        /* 布局微调：支持说明文本卡片 */
+        .dial-matrix { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 16px 15px; align-items: center; margin-bottom: 30px; font-family: -apple-system, sans-serif; }
+        
+        /* 🆕 带有提示信息纽带的控制标签 */
+        .label-container { display: flex; align-items: center; gap: 6px; position: relative; }
+        label { font-size: 12px; color: var(--text-dark); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .info-trigger {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 15px; height: 15px; border-radius: 50%; background: #e3dec3;
+            color: #ffffff; font-size: 10px; font-weight: bold; cursor: help; transition: background 0.2s;
+        }
+        .info-trigger:hover { background: var(--accent-gold); }
+
+        /* 🆕 悬停弹出的纯 CSS 数理概念演示图气泡 */
+        .tooltip-box {
+            display: none; position: absolute; left: 0; top: 25px; width: 280px;
+            background: #ffffff; border: 1px solid var(--border-line); padding: 14px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08); border-radius: 4px; z-index: 100;
+            font-family: -apple-system, sans-serif; text-transform: none; letter-spacing: normal;
+        }
+        .label-container:hover .tooltip-box { display: block; }
+        .tooltip-box p { margin: 0 0 10px 0; font-size: 12px; color: var(--text-dark); line-height: 1.4; text-align: left; }
+
+        /* 🆕 纯 CSS 原生绘制的万花尺概念演示图 */
+        .vector-diagram {
+            width: 100%; height: 140px; background: #fafafa; border: 1px dashed var(--border-line);
+            border-radius: 3px; position: relative; overflow: hidden; margin-top: 5px;
+        }
+        /* 演示图中的各几何图层 */
+        .diagram-R { position: absolute; border: 2px solid #b5b099; border-radius: 50%; width: 120px; height: 120px; left: 10px; top: 10px; box-sizing: border-box; }
+        .diagram-r { position: absolute; border: 2px dashed #73b9b9; border-radius: 50%; width: 65px; height: 65px; left: 35px; top: 35px; box-sizing: border-box; }
+        .diagram-center { position: absolute; width: 4px; height: 4px; background: #2c2a29; border-radius: 50%; left: 66px; top: 66px; }
+        .diagram-pen { position: absolute; width: 6px; height: 6px; background: #a14a42; border-radius: 50%; left: 82px; top: 55px; }
+        .diagram-line { position: absolute; height: 1px; background: #73b9b9; width: 22px; left: 68px; top: 68px; transform: rotate(-35deg); transform-origin: left center; }
+        .diagram-arrow { position: absolute; border-top: 2px solid #b5b099; width: 60px; left: 70px; top: 70px; transform: rotate(45deg); transform-origin: left center; }
+        
+        /* 高亮特定激活图层 */
+        .active-R { border-color: #e67e22 !important; border-width: 3px !important; }
+        .active-r { border-color: #3498db !important; border-style: solid !important; border-width: 3px !important; }
+        .active-d { background: #e74c3c !important; width: 8px !important; height: 8px !important; }
+        .active-line-d { background: #e74c3c !important; height: 3px !important; }
+
+        /* 🆕 画布尺寸 indicator 动态提示卡片 */
+        .scale-explain-card {
+            grid-column: span 2; font-size: 11px; color: #a1835e; background: #fffbf2;
+            padding: 10px 12px; border-left: 3px solid #e6cf8e; border-radius: 2px; margin-top: -6px; margin-bottom: 8px;
+            line-height: 1.4; text-align: left; box-sizing: border-box;
+        }
+
+        input[type="number"] { 
+            background: #ffffff; color: var(--text-dark); border: 1px solid var(--border-line); 
+            padding: 10px; width: 80px; border-radius: 4px; font-size: 14px; text-align: center; font-family: monospace;
+        }
+        input[type="number"]:focus { outline: none; border-color: var(--accent-gold); }
+        
+        .canvas-scale-label { color: var(--accent-gold) !important; }
+
+        .btn-cluster { width: 100%; display: flex; gap: 12px; }
+        button.action-btn {
+            flex: 1; background: var(--text-dark); color: #ffffff; border: none; font-family: -apple-system, sans-serif;
+            padding: 16px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer;
+            letter-spacing: 2px; text-transform: uppercase; transition: all 0.2s;
+        }
+        button.action-btn:hover { background: var(--accent-gold); }
+        
+        button#loopBtn { background: #ffffff; color: var(--text-dark); border: 1px solid var(--border-line); }
+        button#loopBtn:hover { background: var(--bg-ui); border-color: var(--text-dark); }
+
+        .display-case {
+            flex: 1.2; background: var(--bg-ui); border: 1px solid var(--border-line);
+            border-radius: 4px; padding: 40px; min-height: 560px; box-sizing: border-box;
+            display: flex; flex-direction: column; justify-content: center; position: relative;
+        }
+
+        .case-idle { text-align: center; color: var(--text-muted); font-style: italic; font-size: 15px; }
+        .case-idle .radar-ring { font-size: 32px; margin-bottom: 15px; opacity: 0.6; }
+
+        .hint-box {
+            margin-top: 15px; padding: 12px; background: #fffcf0; border: 1px dashed #e6cf8e;
+            border-radius: 4px; font-size: 13px; color: #a37d24; text-align: left; line-height: 1.5;
+            font-family: -apple-system, sans-serif; font-style: normal !important;
+        }
+        
+        .random-box {
+            margin-top: 15px; padding: 12px; background: #f0f4f7; border: 1px dashed #73b9b9;
+            border-radius: 4px; font-size: 13px; color: #3b7373; text-align: left; line-height: 1.5;
+            font-family: -apple-system, sans-serif;
+        }
+
+        .curated-artifact { display: none; width: 100%; animation: softFadeIn 0.8s ease forwards; }
+        .curated-artifact img { 
+            width: 100%; max-height: 420px; object-fit: cover; border-radius: 2px; 
+            filter: sepia(0.1); margin-bottom: 25px; border: 1px solid var(--border-line); 
+        }
+        
+        .curated-artifact .status-badge { font-family: -apple-system, sans-serif; font-size: 11px; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+        .curated-artifact h2 { font-size: 26px; font-weight: 400; margin: 0 0 6px 0; color: var(--text-dark); }
+        .curated-artifact .curator-line { font-family: -apple-system, sans-serif; font-size: 13px; color: var(--text-muted); margin-bottom: 20px; letter-spacing: 0.5px; }
+        .curated-artifact p.desc { font-size: 15px; color: var(--text-dark); line-height: 1.7; text-align: justify; margin: 0; }
+
+        @keyframes softFadeIn { from { opacity: 0; transform: scale(0.99); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>The Curated Geometry Index</h1>
+        <p>Manipulate the geometric instruments on the left. The archival engine will observe the core skeleton ratios and the smoothness of the path to automatically match your pattern against the collection records.</p>
+    </header>
+
+    <div class="exhibition-deck">
+        <div class="easel-panel">
+            <div class="canvas-frame">
+                <canvas id="mainCanvas" width="500" height="500"></canvas>
+            </div>
+            <div class="dial-matrix">
+                
+                <label for="inputScale" class="canvas-scale-label">Canvas Base Scale (Zoom)</label>
+                <input type="number" id="inputScale" value="180">
+
+                <div class="scale-explain-card" id="scaleTip">
+                    🔍 <strong>Scale Indicator:</strong> Modifying this acts exactly like a microscope viewport zoom. It expands or compresses the rendered pixels globally <strong>without</strong> altering the foundational mathematical curve traits or disrupting the database asset query. (Scale: 100%)
+                </div>
+
+                <div class="label-container">
+                    <label for="inputR">Outer Ring Scale (R)</label>
+                    <span class="info-trigger">?</span>
+                    <div class="tooltip-box">
+                        <p><strong>Outer Ring (R):</strong> The large, stationary inner-toothed circular track. Its ratio with the inner wheel shapes the fundamental line axis and total symmetry petals.</p>
+                        <div class="vector-diagram">
+                            <div class="diagram-R active-R"></div>
+                            <div style="position:absolute; left:15px; top:15px; font-size:10px; color:#e74c3c; font-weight:bold;">Stationary Outer Ring (R)</div>
+                        </div>
+                    </div>
+                </div>
+                <input type="number" id="inputR" value="150">
+                
+                <div class="label-container">
+                    <label for="inputR_sub">Inner Wheel Scale (r)</label>
+                    <span class="info-trigger">?</span>
+                    <div class="tooltip-box">
+                        <p><strong>Inner Wheel (r):</strong> The smaller gear rolling along the interior perimeter of the outer ring. Altering its size changes the loop rotation cycles.</p>
+                        <div class="vector-diagram">
+                            <div class="diagram-R"></div>
+                            <div class="diagram-r active-r"></div>
+                            <div style="position:absolute; left:42px; top:55px; font-size:10px; color:#3498db; font-weight:bold;">Rolling Wheel (r)</div>
+                        </div>
+                    </div>
+                </div>
+                <input type="number" id="inputR_sub" value="100">
+                
+                <div class="label-container">
+                    <label for="inputD">Pen Tracking Distance (d)</label>
+                    <span class="info-trigger">?</span>
+                    <div class="tooltip-box">
+                        <p><strong>Pen Distance (d):</strong> The location of the pen tip measured from the center of the inner wheel. Controls edge curvature profile: rounded (d&lt;r), sharp point (d=r), or intersecting loops (d&gt;r).</p>
+                        <div class="vector-diagram">
+                            <div class="diagram-R"></div>
+                            <div class="diagram-r"></div>
+                            <div class="diagram-center"></div>
+                            <div class="diagram-line active-line-d"></div>
+                            <div class="diagram-pen active-d"></div>
+                            <div style="position:absolute; right:15px; top:15px; font-size:10px; color:#e74c3c; font-weight:bold;">Pen Tip Offset (d)</div>
+                        </div>
+                    </div>
+                </div>
+                <input type="number" id="inputD" value="65">
+            </div>
+            
+            <div class="btn-cluster">
+                <button id="actionBtn" class="action-btn">Render 1 Loop</button>
+                <button id="loopBtn" class="action-btn">Complete Loop</button>
+            </div>
+        </div>
+
+        <div class="display-case" id="displayCase">
+            <div class="case-idle" id="idleView">
+                <div class="radar-ring">◌</div>
+                <p id="idleText">Awaiting geometric vector input...<br>Alter the radii and path traits to see corresponding works materialize.</p>
+            </div>
+
+            <div class="curated-artifact" id="artifactView">
+                <div class="status-badge" id="artBadge">✦ Archives Match Identified</div>
+                <h2 id="artName">Collection Piece</h2>
+                <div class="curator-line" id="artCreator">Origin Attribution</div>
+                <img id="artImg" src="" alt="Exhibited Specimen">
+                <p class="desc" id="artDesc">Historical and formal descriptive essay logs...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="./database.js"></script>
+
+    <script>
+        let animationId = null;
+        let isDrawing = false;
+
+        const mainCanvas = document.getElementById('mainCanvas');
+        const ctx = mainCanvas.getContext('2d');
+        const idleView = document.getElementById('idleView');
+        const idleText = document.getElementById('idleText');
+        const artifactView = document.getElementById('artifactView');
+
+        // 🆕 实时更新缩放文本提示框的倍数百分比
+        document.getElementById('inputScale').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value) || 180;
+            document.getElementById('scaleTip').innerHTML = `🔍 <strong>Scale Indicator:</strong> Modifying this acts exactly like a microscope viewport zoom. It expands or compresses the rendered pixels globally <strong>without</strong> altering the foundational mathematical curve traits or disrupting the database asset query. (Scale: ${Math.round(val / 1.8)}%)`;
+        });
+
+        function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+        function getSpiroCoords(t, R, r, d, cx, cy) {
+            const x = (R - r) * Math.cos(t) + d * Math.cos(((R - r) / r) * t);
+            const y = (R - r) * Math.sin(t) - d * Math.sin(((R - r) / r) * t);
+            return { x: cx + x, y: cy + y };
+        }
+
+        function evaluateGeometryAndMatch(R, r, d) {
+            if (typeof artDatabase === 'undefined') return { type: 'none' };
+
+            const userRatio = R / r;
+            const userDrRatio = d / r;
+
+            const scaleFactor = 10000; 
+            const int_R = Math.round(userRatio * scaleFactor);
+            const int_r = scaleFactor;
+            const currentGcd = gcd(int_R, int_r);
+            
+            const userPetals = int_R / currentGcd;     
+            const userLoops = int_r / currentGcd;      
+
+            if (userLoops > 50 || userPetals > 8 || !Number.isInteger(userPetals)) {
+                if (typeof randomArtifactPool !== 'undefined' && randomArtifactPool.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * randomArtifactPool.length);
+                    return { type: 'random', data: randomArtifactPool[randomIndex] };
+                }
+            }
+
+            for (let item of artDatabase) {
+                const isSkeletonMatched = (userRatio === item.targetRatio);
+                const isLineTraitMatched = (userDrRatio >= item.minDrRatio && userDrRatio <= item.maxDrRatio);
+
+                if (isSkeletonMatched && isLineTraitMatched) {
+                    return { type: 'matched', data: item }; 
+                }
+            }
+            return { type: 'none', expectedPetals: userPetals };
+        }
+
+        function executeRender(drawCompleteLoop) {
+            if(animationId) cancelAnimationFrame(animationId);
+
+            ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            ctx.strokeStyle = "#4a5343"; 
+            ctx.lineWidth = 1.1;
+
+            artifactView.style.width = '100%';
+            artifactView.style.display = 'none';
+            idleView.style.display = 'block';
+            idleText.innerHTML = "Running mathematical curve match scanning...<br>Evaluating vector weights.";
+
+            const R = parseFloat(document.getElementById('inputR').value) || 1;
+            const r = parseFloat(document.getElementById('inputR_sub').value) || 1;
+            const d = parseFloat(document.getElementById('inputD').value) || 0;
+
+            const userSetScale = parseFloat(document.getElementById('inputScale').value) || 180;
+            const visualScale = userSetScale / R; 
+            
+            let maxTheta = 2 * Math.PI;
+            if (drawCompleteLoop) {
+                maxTheta = (Math.round(r*100) / gcd(Math.round(R*100), Math.round(r*100))) * 2 * Math.PI;
+            }
+            
+            let currentTheta = 0;
+            isDrawing = true;
+
+            function animate() {
+                if (!isDrawing) return;
+                
+                ctx.beginPath();
+                for (let i = 0; i < 45; i++) {
+                    if (currentTheta >= maxTheta) {
+                        isDrawing = false;
+                        
+                        const result = evaluateGeometryAndMatch(R, r, d);
+
+                        if (result.type === 'matched') {
+                            document.getElementById('artBadge').innerText = "✦ Archives Match Identified";
+                            document.getElementById('artBadge').style.color = "var(--accent-gold)";
+                            document.getElementById('artName').innerText = result.data.name;
+                            document.getElementById('artCreator').innerText = "Cataloging: " + result.data.creator + " | Style: " + result.data.lineStyleStyle;
+                            document.getElementById('artImg').src = result.data.imgUrl;
+                            document.getElementById('artDesc').innerText = result.data.description;
+                            
+                            idleView.style.display = 'none';
+                            artifactView.style.display = 'block';
+
+                        } else if (result.type === 'random') {
+                            document.getElementById('artBadge').innerText = "✧ Chaos Gallery Connection Established";
+                            document.getElementById('artBadge').style.color = "#3b7373";
+                            document.getElementById('artName').innerText = result.data.name;
+                            document.getElementById('artCreator').innerText = "Attribution: " + result.data.creator;
+                            document.getElementById('artImg').src = result.data.imgUrl;
+                            document.getElementById('artDesc').innerText = result.data.description;
+                            
+                            const descNode = document.getElementById('artDesc');
+                            const extraRandomBox = document.createElement('div');
+                            extraRandomBox.className = "random-box";
+                            extraRandomBox.innerHTML = "📡 <strong>Engine Notice:</strong> High-order complex configuration detected. The regular archive case has been bypassed to link this unmapped waveform with transient digital canvas collections.";
+                            
+                            const existingBox = artifactView.querySelector('.random-box');
+                            if(existingBox) existingBox.remove();
+                            artifactView.appendChild(extraRandomBox);
+
+                            idleView.style.display = 'none';
+                            artifactView.style.display = 'block';
+
+                        } else {
+                            let hintHtml = `
+                                <span style='color: #a14a42; font-weight:600;'>Unlisted Matrix Geometry</span><br>
+                                This coordinate set produces a partial curve.
+                                <div class="hint-box">
+                                    💡 <strong>Geometry Insight:</strong> 
+                                    The current ratio breaks the 1-loop closure boundary. Try altering your 
+                                    <strong>Outer Ring (R) to ${result.expectedPetals}</strong> and <strong>Inner Wheel (r) to 1</strong> 
+                                    to capture a synchronized full-skeleton pattern and unlock the archive artifact image!
+                                </div>
+                            `;
+                            idleText.innerHTML = hintHtml;
+                        }
+                        break;
+                    }
+
+                    let startPos = getSpiroCoords(currentTheta, R*visualScale, r*visualScale, d*visualScale, 250, 250);
+                    currentTheta += 0.01;
+                    let endPos = getSpiroCoords(currentTheta, R*visualScale, r*visualScale, d*visualScale, 250, 250);
+
+                    if (i === 0) ctx.moveTo(startPos.x, startPos.y);
+                    ctx.lineTo(endPos.x, endPos.y);
+                }
+                ctx.stroke();
+
+                if (isDrawing) animationId = requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        document.getElementById('actionBtn').addEventListener('click', () => { executeRender(false); });
+        document.getElementById('loopBtn').addEventListener('click', () => { executeRender(true); });
+    </script>
+</body>
+</html>
