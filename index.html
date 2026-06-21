@@ -34,10 +34,8 @@
         
         canvas#mainCanvas { background: #ffffff; display: block; width: 500px; height: 500px; }
         
-        /* 布局微调：支持说明文本卡片 */
         .dial-matrix { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 16px 15px; align-items: center; margin-bottom: 30px; font-family: -apple-system, sans-serif; }
         
-        /* 🆕 带有提示信息纽带的控制标签 */
         .label-container { display: flex; align-items: center; gap: 6px; position: relative; }
         label { font-size: 12px; color: var(--text-dark); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
         
@@ -48,7 +46,7 @@
         }
         .info-trigger:hover { background: var(--accent-gold); }
 
-        /* 🆕 悬停弹出的纯 CSS 数理概念演示图气泡 */
+        /* 悬停弹出的纯 CSS 数理概念演示图气泡 */
         .tooltip-box {
             display: none; position: absolute; left: 0; top: 25px; width: 280px;
             background: #ffffff; border: 1px solid var(--border-line); padding: 14px;
@@ -58,12 +56,11 @@
         .label-container:hover .tooltip-box { display: block; }
         .tooltip-box p { margin: 0 0 10px 0; font-size: 12px; color: var(--text-dark); line-height: 1.4; text-align: left; }
 
-        /* 🆕 纯 CSS 原生绘制的万花尺概念演示图 */
+        /* 纯 CSS 原生绘制的万花尺概念演示图 */
         .vector-diagram {
             width: 100%; height: 140px; background: #fafafa; border: 1px dashed var(--border-line);
             border-radius: 3px; position: relative; overflow: hidden; margin-top: 5px;
         }
-        /* 演示图中的各几何图层 */
         .diagram-R { position: absolute; border: 2px solid #b5b099; border-radius: 50%; width: 120px; height: 120px; left: 10px; top: 10px; box-sizing: border-box; }
         .diagram-r { position: absolute; border: 2px dashed #73b9b9; border-radius: 50%; width: 65px; height: 65px; left: 35px; top: 35px; box-sizing: border-box; }
         .diagram-center { position: absolute; width: 4px; height: 4px; background: #2c2a29; border-radius: 50%; left: 66px; top: 66px; }
@@ -71,13 +68,11 @@
         .diagram-line { position: absolute; height: 1px; background: #73b9b9; width: 22px; left: 68px; top: 68px; transform: rotate(-35deg); transform-origin: left center; }
         .diagram-arrow { position: absolute; border-top: 2px solid #b5b099; width: 60px; left: 70px; top: 70px; transform: rotate(45deg); transform-origin: left center; }
         
-        /* 高亮特定激活图层 */
         .active-R { border-color: #e67e22 !important; border-width: 3px !important; }
         .active-r { border-color: #3498db !important; border-style: solid !important; border-width: 3px !important; }
         .active-d { background: #e74c3c !important; width: 8px !important; height: 8px !important; }
         .active-line-d { background: #e74c3c !important; height: 3px !important; }
 
-        /* 🆕 画布尺寸 indicator 动态提示卡片 */
         .scale-explain-card {
             grid-column: span 2; font-size: 11px; color: #a1835e; background: #fffbf2;
             padding: 10px 12px; border-left: 3px solid #e6cf8e; border-radius: 2px; margin-top: -6px; margin-bottom: 8px;
