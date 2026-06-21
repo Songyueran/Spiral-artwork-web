@@ -133,7 +133,7 @@ const artDatabase = [
     minDrRatio: 0.0,  // Range 5:1:0 - 5:1:1
     maxDrRatio: 1.0,
     lineStyleStyle: "Continuous circular connection of five points.",
-    imgUrl: "./images/5.3.jpg",
+    imgUrl: "./images/5.3.1.jpg",
     description: "The inverted pentagram, a well-known symbol in mysticism, is the reversed version of the regular pentagram. Made of five equal lines enclosed in a continuous circle, it stands for circulation and connection. Its symbolism has evolved over time: it once served as a symbol for protection and blessings, later representing reversed spiritual values and the balance between matter and spirit. Geometrically, its symmetrical design makes it a striking element in art and totem creation. Ultimately, this ancient symbol carries no inherent good or evil; its meaning depends on cultural contexts, reflecting humanity’s exploration of the universe, spirit and matter."
   },
 
